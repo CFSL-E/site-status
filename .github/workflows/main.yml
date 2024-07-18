@@ -1,0 +1,38 @@
+name: Check for upstream updates
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天运行一次
+  workflow_dispatch:
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # 确保获取完整的历史记录
+
+      - name: Setup git to fetch upstream
+        run: |
+          git remote add upstream https://github.com/imsyy/site-status.git
+          git fetch upstream
+
+      - name: Check for updates
+        id: check_updates
+        run: |
+          # 比较本地的main分支与上游仓库的main分支
+          UPDATES=$(git log HEAD..upstream/master --oneline)
+          echo "::set-output name=updates::$UPDATES"
+        
+      - name: Create issue if updates are found
+        if: steps.check_updates.outputs.updates != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -H "Authorization: token $GITHUB_TOKEN" \
+               -X POST \
+               -d "{\"title\": \"Upstream updates detected\", \"body\": \"Upstream repository has updates. Please sync your fork.\"}" \
+               https://api.github.com/repos/${{ github.repository }}/issues
