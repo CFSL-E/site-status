@@ -25,7 +25,7 @@ jobs:
         run: |
           # 比较本地的main分支与上游仓库的main分支
           UPDATES=$(git log HEAD..upstream/master --oneline)
-          echo "::set-output name=updates::$UPDATES"
+          echo "updates=$UPDATES" >> $GITHUB_OUTPUT
         
       - name: Create issue if updates are found
         if: steps.check_updates.outputs.updates != ''
